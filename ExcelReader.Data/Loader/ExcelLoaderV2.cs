@@ -6,7 +6,7 @@ using System.IO;
 
 namespace ExcelReader.Data.Loader
 {
-    public class ExcelLoader
+    public class ExcelLoaderV2
     {
         public List<Workbook> LoadAll(List<string> filePaths)
         {
@@ -36,10 +36,12 @@ namespace ExcelReader.Data.Loader
                         }
                     });
 
-                    workbook = new Workbook(filePath.Split('\\')[filePath.Split('\\').Length-1].Split('.')[0]);
+                    workbook = new Workbook(filePath);
 
-                    foreach (DataTable dataTable in result.Tables)
+                    for (int i = 0; i < result.Tables.Count; i++)
                     {
+                        DataTable dataTable = result.Tables[i];
+
                         var columns = new List<Column>();
                         for (int ci = 0; ci < dataTable.Columns.Count; ci++)
                         {
@@ -47,7 +49,7 @@ namespace ExcelReader.Data.Loader
                             columns.Add(new Column(ci, dataColumn.ColumnName));
                         }
 
-                        var worksheet = new Worksheet(dataTable.TableName, columns);
+                        var worksheet = new Worksheet(i, dataTable.TableName, columns);
 
                         for (int ri = 0; ri < dataTable.Rows.Count; ri++)
                         {

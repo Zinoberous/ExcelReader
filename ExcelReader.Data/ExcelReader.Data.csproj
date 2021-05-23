@@ -48,7 +48,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Loader\ExcelLoader.cs" />
+    <Compile Include="Loader\ExcelLoaderV1.cs" />
+    <Compile Include="Loader\ExcelLoaderV2.cs" />
     <Compile Include="Model\Cell.cs" />
     <Compile Include="Model\Column.cs" />
     <Compile Include="Model\Row.cs" />
@@ -59,6 +60,5 @@
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
-  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
