@@ -1,5 +1,4 @@
 ﻿using ExcelDataReader;
-using ExcelReader.Data.Model;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -9,22 +8,25 @@ namespace ExcelReader.Data.Loader
 {
     public class ExcelLoaderV1
     {
-        public List<Dictionary<string, List<List<Tuple<string, object>>>>> LoadAll(List<string> filePaths)
+        public List<KeyValuePair<string, Dictionary<string, Tuple<List<string>, List<Dictionary<string, object>>>>>> LoadAll(List<string> filePaths)
         {
-            var workbooks = new List<Dictionary<string, List<List<Tuple<string, object>>>>>();
+            var server = new List<KeyValuePair<string, Dictionary<string, Tuple<List<string>, List<Dictionary<string, object>>>>>>();
 
             foreach(string filePath in filePaths)
             {
-                workbooks.Add(Load(filePath));
+                server.Add(Load(filePath));
             }
 
-            return workbooks;
+            return server;
         }
-
-        // Workbook<TableName, Rows<ColumnName, Values>>
-        public Dictionary<string, List<List<Tuple<string, object>>>> Load(string filePath)
+        
+        // Database<DatabaseName, Tables<TableName, <Columns, Rows<ColumnName, Value>>>>
+        public KeyValuePair<string, Dictionary<string, Tuple<List<string>, List<Dictionary<string, object>>>>> Load(string filePath)
         {
-            var workbook = new Dictionary<string, List<List<Tuple<string, object>>>>();
+            var database = new KeyValuePair<string, Dictionary<string, Tuple<List<string>, List<Dictionary<string, object>>>>>(
+                filePath.Split('\\')[filePath.Split('\\').Length - 1].Split('.')[0],
+                new Dictionary<string, Tuple<List<string>, List<Dictionary<string, object>>>>()
+            );
 
             using (var stream = File.Open(filePath, FileMode.Open, FileAccess.Read))
             {
@@ -38,33 +40,42 @@ namespace ExcelReader.Data.Loader
                         }
                     });
 
-                    foreach (DataTable table in result.Tables)
+                    foreach (DataTable dataTable in result.Tables)
                     {
-                        var worksheet = new KeyValuePair<string, List<List<Tuple<string, object>>>>(table.TableName, new List<List<Tuple<string, object>>>());
+                        var table = new KeyValuePair<string, Tuple<List<string>, List<Dictionary<string, object>>>>(
+                            dataTable.TableName,
+                            new Tuple<List<string>, List<Dictionary<string, object>>>(
+                                new List<string>(),
+                                new List<Dictionary<string, object>>()
+                            )
+                        );
 
-                        var columnNames = new List<string>();
-                        foreach (DataColumn column in table.Columns)
+                        var columns = new List<string>();
+                        foreach (DataColumn dataColumn in dataTable.Columns)
                         {
-                            columnNames.Add(column.ColumnName);
+                            if (dataColumn.ColumnName.StartsWith("Column"))
+                                break;
+
+                            columns.Add(dataColumn.ColumnName);
                         }
+                        table.Value.Item1.AddRange(columns);
 
-                        foreach (DataRow row in table.Rows)
+                        foreach (DataRow dataRow in dataTable.Rows)
                         {
-                            var rowValues = new List<Tuple<string, object>>();
-
-                            for (int i = 0; i < row.ItemArray.Length; i++)
+                            var row = new Dictionary<string, object>();
+                            for (int i = 0; i < columns.Count; i++)
                             {
-                                rowValues.Add(new Tuple<string, object>(columnNames[i], row.ItemArray[i]));
-                                worksheet.Value.Add(rowValues);
+                                row.Add(columns[i], dataRow.ItemArray[i]);
                             }
+                            table.Value.Item2.Add(row);
                         }
 
-                        workbook.Add(worksheet.Key, worksheet.Value);
+                        database.Value.Add(table.Key, table.Value);
                     }
                 }
             }
 
-            return workbook;
+            return database;
         }
     }
 }

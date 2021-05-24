@@ -8,21 +8,21 @@ namespace ExcelReader.Data.Loader
 {
     public class ExcelLoaderV2
     {
-        public List<Workbook> LoadAll(List<string> filePaths)
+        public List<Database> LoadAll(List<string> filePaths)
         {
-            List<Workbook> workbooks = new List<Workbook>();
+            List<Database> server = new List<Database>();
 
             foreach(string filePath in filePaths)
             {
-                workbooks.Add(Load(filePath));
+                server.Add(Load(filePath));
             }
 
-            return workbooks;
+            return server;
         }
 
-        public Workbook Load(string filePath)
+        public Database Load(string filePath)
         {
-            Workbook workbook = null;
+            Database database = null;
 
             using (var stream = File.Open(filePath, FileMode.Open, FileAccess.Read))
             {
@@ -36,7 +36,7 @@ namespace ExcelReader.Data.Loader
                         }
                     });
 
-                    workbook = new Workbook(filePath);
+                    database = new Database(filePath);
 
                     for (int i = 0; i < result.Tables.Count; i++)
                     {
@@ -46,34 +46,37 @@ namespace ExcelReader.Data.Loader
                         for (int ci = 0; ci < dataTable.Columns.Count; ci++)
                         {
                             DataColumn dataColumn = dataTable.Columns[ci];
-                            columns.Add(new Column(ci, dataColumn.ColumnName));
+
+                            if (dataColumn.ColumnName.StartsWith("Column"))
+                                break;
+
+                            Column column = new Column(ci, dataColumn.ColumnName);
+                            columns.Add(column);
                         }
 
-                        var worksheet = new Worksheet(i, dataTable.TableName, columns);
+                        Table table = new Table(i, dataTable.TableName, columns);
 
                         for (int ri = 0; ri < dataTable.Rows.Count; ri++)
                         {
                             DataRow dataRow = dataTable.Rows[ri];
 
-                            Row row = new Row(ri)
-                            {
-                                Cells = new List<Cell>()
-                            };
+                            Row row = new Row(ri);
 
-                            for (int ci = 0; ci < dataRow.ItemArray.Length; ci++)
+                            for (int ci = 0; ci < columns.Count; ci++)
                             {
-                                row.Cells.Add(new Cell(columns[ci], dataRow.ItemArray[ci]));
+                                Cell cell = new Cell(columns[ci], dataRow.ItemArray[ci]);
+                                row.Cells.Add(cell);
                             }
 
-                            worksheet.Rows.Add(row);
+                            table.Rows.Add(row);
                         }
 
-                        workbook.Worksheets.Add(worksheet);
+                        database.Tables.Add(table);
                     }
                 }
             }
 
-            return workbook;
+            return database;
         }
     }
 }

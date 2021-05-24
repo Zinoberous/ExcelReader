@@ -53,8 +53,8 @@
     <Compile Include="Model\Cell.cs" />
     <Compile Include="Model\Column.cs" />
     <Compile Include="Model\Row.cs" />
-    <Compile Include="Model\Workbook.cs" />
-    <Compile Include="Model\Worksheet.cs" />
+    <Compile Include="Model\Database.cs" />
+    <Compile Include="Model\Table.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
